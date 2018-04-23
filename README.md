@@ -13,4 +13,7 @@ A spinning wood die created with CSS3 transformation |
 A partical system with 20,000 particals | 
 [GraphicsProgramming -> javascriptParticalSystem.html](https://github.com/PhillipMarsley/Graphics-Programming/javascriptParticalSystem.html "javascriptParticalSystem.html")
 
-![partical.gif](https://github.com/PhillipMarsley/Graphics-Programming/blob/master/ParticalJavascript.gif "gif")
+![particle.gif](https://github.com/PhillipMarsley/Graphics-Programming/blob/master/ParticalJavascript.gif "gif")
+
+### Update:
+![particle.gif](https://github.com/PhillipMarsley/Graphics-Programming/blob/master/Screenshot-2018-4-22%20Javascript%20Particles.png "img")
