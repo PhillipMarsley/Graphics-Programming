@@ -44,12 +44,19 @@
 
         #sliders input,
         #sliders label {
-            width: calc(33% - 1em);
             margin: 0;
             padding: 0;
             display: inline-block;
             vertical-align: middle;
             text-align: center;
+        }
+
+        #sliders input {
+            width: calc(50% - 1em);
+        }
+
+        #sliders label {
+            width: calc(25% - 1em);
         }
     </style>
 </head>
@@ -60,13 +67,18 @@
     </div>
     <div id="sliders">
         <div class="pair">
+            <label>Hue</label>
+            <input id="hueSlider" type="range" min="0" max="360" value="0">
+            <label id="hueLabel">0</label>
+        </div>
+        <div class="pair">
             <label>Emission Rate</label>
-            <input id="emissionRateSlider" type="range" min="1" max="50" value="0">
+            <input id="emissionRateSlider" type="range" min="1" max="100" value="0">
             <label id="emissionRateLabel">0</label>
         </div>
         <div class="pair">
             <label>Particle Size</label>
-            <input id="particleSizeSlider" type="range" min="1" max="50" value="0">
+            <input id="particleSizeSlider" type="range" min="1" max="10" value="0">
             <label id="particleSizeLabel">0</label>
         </div>
         <div class="pair">
@@ -84,14 +96,21 @@
             <input id="speedSlider" type="range" min="1" max="10" value="0">
             <label id="speedLabel">0</label>
         </div>
+        <div class="pair">
+            <label>Mass</label>
+            <input id="massSlider" type="range" min="-150" max="150" value="0">
+            <label id="massLabel">0</label>
+        </div>
     </div>
 
     <script>
-        //============================================
-        //  Declare Variables
-        //============================================
+        //=======================================================================
+        //  Variables
+        //=======================================================================
         var container = document.getElementById("container"),
             canvas = document.getElementById("canvas"),
+            hueSlider = document.getElementById("hueSlider"),
+            hueLabel = document.getElementById("hueLabel"),
             emissionRateSlider = document.getElementById("emissionRateSlider"),
             emissionRateLabel = document.getElementById("emissionRateLabel"),
             particleSizeSlider = document.getElementById("particleSizeSlider"),
@@ -101,26 +120,38 @@
             spreadSlider = document.getElementById("spreadSlider"),
             spreadLabel = document.getElementById("spreadLabel"),
             speedSlider = document.getElementById("speedSlider"),
-            speedLabel = document.getElementById("speedLabel");
+            speedLabel = document.getElementById("speedLabel"),
+            massSlider = document.getElementById("massSlider"),
+            massLabel = document.getElementById("massLabel");
 
         var gc = canvas.getContext("2d"),
-            particles = [],
-            EMITTER_A,
             FPS = 1000 / 60,
-            MAX_PARTICLES = 50000,
+            PARTICLES = [],
+            EMITTER_A,
+            FIELD_A,
+            OBJECT_SIZE = 4,
+            MAX_PARTICLES = 100000,
+            HUE = 24,
             EMISSION_RATE = 10,
-            PARTICLE_SIZE = 4,
-            SPREAD = 0.20,
-            ANGLE = Math.PI * 0.25,
-            SPEED = 2;
+            PARTICLE_SIZE = 3,
+            SPREAD = 0.03,
+            ANGLE = Math.PI * ((45 / 1.8) * 0.01),
+            SPEED = 1,
+            MASS = 80;
 
-        //============================================
+        //=======================================================================
         //  Event-Listeners
-        //============================================
+        //=======================================================================
         function addEventLisnters() {
+            hueSlider.value = HUE;
+            hueLabel.innerHTML = HUE;
+            hueSlider.addEventListener("input", function () {
+                hueLabel.innerHTML = hueSlider.value;
+                HUE = hueSlider.value;
+            });
+
             emissionRateSlider.value = EMISSION_RATE;
             emissionRateLabel.innerHTML = EMISSION_RATE;
-
             emissionRateSlider.addEventListener("input", function () {
                 emissionRateLabel.innerHTML = emissionRateSlider.value;
                 EMISSION_RATE = emissionRateSlider.value;
@@ -128,7 +159,6 @@
 
             particleSizeSlider.value = PARTICLE_SIZE;
             particleSizeLabel.innerHTML = PARTICLE_SIZE;
-
             particleSizeSlider.addEventListener("input", function () {
                 particleSizeLabel.innerHTML = particleSizeSlider.value;
                 PARTICLE_SIZE = particleSizeSlider.value;
@@ -136,16 +166,14 @@
 
             spreadSlider.value = (SPREAD * 100);
             spreadLabel.innerHTML = (SPREAD * 100);
-
             spreadSlider.addEventListener("input", function () {
                 spreadLabel.innerHTML = spreadSlider.value;
                 SPREAD = spreadSlider.value * 0.01;
-                EMITTER_A.spread = (SPREAD);
+                EMITTER_A.spread = SPREAD;
             });
 
             angleSlider.value = ((ANGLE / Math.PI) * 100) * 1.8;
             angleLabel.innerHTML = ((ANGLE / Math.PI) * 100) * 1.8;
-
             angleSlider.addEventListener("input", function () {
                 angleLabel.innerHTML = angleSlider.value;
                 ANGLE = Math.PI * ((angleSlider.value / 1.8) * 0.01);
@@ -154,17 +182,26 @@
 
             speedSlider.value = SPEED;
             speedLabel.innerHTML = SPEED;
-
             speedSlider.addEventListener("input", function () {
                 speedLabel.innerHTML = speedSlider.value;
                 SPEED = speedSlider.value;
                 EMITTER_A.velocity = new Vector.fromAngle(ANGLE, SPEED);
             });
+
+            massSlider.value = MASS;
+            particleSizeLabel.innerHTML = MASS;
+            massSlider.addEventListener("input", function () {
+                massLabel.innerHTML = massSlider.value;
+                MASS = massSlider.value;
+                for (var i = 0; i < fields.length; i++) {
+                    fields[i].setMass(MASS);
+                }
+            });
         }
 
-        //============================================
+        //=======================================================================
         //  Helpers
-        //============================================
+        //=======================================================================
         function getRandomIntInclusive(min, max) {
             min = Math.ceil(min);
             max = Math.floor(max);
@@ -197,10 +234,9 @@
             return new Vector(magnitude * Math.cos(angle), magnitude * Math.sin(angle));
         };
 
-        //===========================================
+        //======================================================================
         //  Animation Frames
-        //===========================================
-
+        //======================================================================
         window.requestAnimFrame = (function () {
             return window.requestAnimationFrame ||
                 window.webkitRequestAnimationFrame ||
@@ -212,10 +248,9 @@
                 };
         })();
 
-        //===========================================
+        //======================================================================
         //  Objects
-        //===========================================
-
+        //======================================================================
         var CanvasArea = {
             canvas: document.getElementById("canvas"),
             create: function () {
@@ -237,17 +272,30 @@
         }
 
         Particle.prototype.move = function () {
-            // this.acceleration.x = 0.05;
-            // this.acceleration.y = -0.05;
-
-            // if(this.position.y < CanvasArea.canvas.height / 2) {
-            //     this.acceleration.x = -0.05;
-            //     this.acceleration.y = 0.05;
-            // }
-
             this.velocity.add(this.acceleration);
             this.position.add(this.velocity);
-        }
+        };
+
+        Particle.prototype.submitToFields = function () {
+            //starting acceleration
+            var totalAccelerationX = 0;
+            var totalAccelerationY = 0;
+
+            for (var i = 0; i < fields.length; i++) {
+                //distance between partical and field
+                var vectorX = fields[i].position.x - this.position.x;
+                var vectorY = fields[i].position.y - this.position.y;
+
+                //caculate force
+                var force = fields[i].mass / Math.pow(vectorX * vectorX + vectorY * vectorY, 1.5);
+
+                //add to the total acceleration the force adjusted by distance
+                totalAccelerationX += vectorX * force;
+                totalAccelerationY += vectorY * force;
+            }
+            //update acceleration
+            this.acceleration = new Vector(totalAccelerationX, totalAccelerationY);
+        };
 
         function Emitter(point, velocity, spread) {
             this.position = point;
@@ -261,59 +309,86 @@
             this.eMagnitude = this.velocity.getMagnitude();
             this.ePosition = new Vector(this.position.x, this.position.y);
             this.eVelocity = Vector.fromAngle(this.eAngle, this.eMagnitude);
-            // this.eVelocity.add(curve()); //Makes it so some move faster then others, adding a 3d effect
             // var acceleration = new Vector(0, 0);
-
             return new Particle(this.ePosition, this.eVelocity, /*acceleration*/);
         }
 
+        function Field(point, mass) {
+            this.position = point;
+            this.setMass(mass);
+        }
+
+        Field.prototype.setMass = function (mass) {
+            this.mass = mass || 100;
+            //positive | attract | green
+            //negative | repel | red
+            this.paintColor = mass < 0 ? "#f00" : "#0f0";
+        };
+
+        //======================================================================
+        //  Functions
+        //======================================================================
         function addNewParticles() {
-            if (particles.length > MAX_PARTICLES) {
+            if (PARTICLES.length > MAX_PARTICLES) {
                 return;
             }
 
             for (var i = 0; i < EMISSION_RATE; i++) {
-                particles.push(EMITTER_A.emitParticle());
+                PARTICLES.push(EMITTER_A.emitParticle());
             }
         }
 
         function plotParticles(boundsX, boundsY) {
             var currentParticles = [];
 
-            for (var i = 0; i < particles.length; i++) {
-                var particle = particles[i];
+            for (var i = 0; i < PARTICLES.length; i++) {
+                var particle = PARTICLES[i];
                 var pos = particle.position;
 
-                if (pos.x <= 0 || pos.x >= boundsX && pos.y <= 0 || pos.y >= boundsY) {
+                if (pos.x <= 0 || pos.x >= boundsX || pos.y <= 0 || pos.y >= boundsY) {
                     continue;
                 }
-
                 // if (particle.life <= 0) {
                 //     continue;
                 // }
 
+                particle.submitToFields();
                 particle.move();
                 currentParticles.push(particle);
             }
-
-            particles = currentParticles;
+            PARTICLES = currentParticles;
         }
 
         function drawParticles() {
-            gc.fillStyle = "rgba(255, 100, 0, 0.5)";
+            // gc.fillStyle = "rgba(255, 100, 0, 0.5)";
+            gc.fillStyle = "hsla(" + HUE + ", 100%, 50%, 0.3)";
 
-            for (var i = 0; i < particles.length; i++) {
-                var position = particles[i].position;
+            for (var i = 0; i < PARTICLES.length; i++) {
+                var position = PARTICLES[i].position;
                 gc.fillRect(position.x, position.y, PARTICLE_SIZE, PARTICLE_SIZE);
             }
         }
 
-        //===========================================
+        function paintCircle(object) {
+            gc.fillStyle = object.paintColor;
+            gc.beginPath();
+            gc.arc(object.position.x, object.position.y, OBJECT_SIZE, 0, Math.PI * 2);
+            gc.closePath();
+            gc.fill();
+        }
+
+        //======================================================================
         //  Main Functions
-        //===========================================
-        function buildCanvas() {
+        //======================================================================
+        var fields = [];
+
+        function build() {
             CanvasArea.create();
-            EMITTER_A = new Emitter(new Vector(100, 100), Vector.fromAngle(ANGLE, SPEED), SPREAD);
+            EMITTER_A = new Emitter(new Vector(10, 10), Vector.fromAngle(ANGLE, SPEED), SPREAD);
+            fields.push(new Field(new Vector(150, 100), MASS));
+            fields.push(new Field(new Vector(100, 200), MASS));
+            fields.push(new Field(new Vector(300, 150), MASS));
+            fields.push(new Field(new Vector(500, 600), MASS));
         }
 
         function clear() {
@@ -328,6 +403,10 @@
         function paint() {
             gc.globalCompositeOperation = "lighter";
             drawParticles();
+            paintCircle(EMITTER_A);
+            for (var i = 0; i < fields.length; i++) {
+                paintCircle(fields[i]);
+            }
         }
 
         function mainLoop() {
@@ -337,11 +416,11 @@
             requestAnimFrame(mainLoop);
         }
 
-        //===========================================
+        //======================================================================
         //  Run
-        //===========================================
+        //======================================================================
         window.onload = function () {
-            buildCanvas();
+            build();
             addEventLisnters();
             mainLoop();
         }
