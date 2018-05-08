@@ -16,4 +16,7 @@ A partical system with 20,000 particals |
 ![particle.gif](https://github.com/PhillipMarsley/Graphics-Programming/blob/master/ParticalJavascript.gif "gif")
 
 ### Update:
-![particle.gif](https://github.com/PhillipMarsley/Graphics-Programming/blob/master/Screenshot-2018-4-22%20Javascript%20Particles.png "img")
+![particle.png](https://github.com/PhillipMarsley/Graphics-Programming/blob/master/Screenshot-2018-4-22%20Javascript%20Particles.png "img")
+
+### Update:
+![particle.png](https://github.com/PhillipMarsley/Graphics-Programming/blob/master/Screenshot-2018-4-23%20Javascript%20Particles.png "img")
